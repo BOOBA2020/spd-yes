@@ -8,6 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+registerFont('./Montserrat-Bold.ttf', { 
+  family: 'Montserrat', 
+  weight: 'bold',
+  style: 'normal'
+})
+
 app.use((req, res, next) => {
     console.log('🌐 INCOMING REQUEST:');
     console.log('Method:', req.method);
@@ -156,7 +162,7 @@ async function createDonationImage(donatorAvatar, raiserAvatar, donatorName, rai
         
         // Draw names
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 18px Arial';
+        ctx.font = 'bold 18px Montserrat';
         ctx.textAlign = 'center';
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 4;
@@ -170,7 +176,7 @@ async function createDonationImage(donatorAvatar, raiserAvatar, donatorName, rai
         
         // Draw amount with Robux imae
         ctx.fillStyle = donationColor;
-        ctx.font = 'bold 42px Arial';
+        ctx.font = 'bold 34px Montserrat';
         ctx.textAlign = 'center';
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 8;
@@ -187,9 +193,9 @@ async function createDonationImage(donatorAvatar, raiserAvatar, donatorName, rai
             const text = `${formatCommas(amount)}`;
             const textWidth = ctx.measureText(text).width;
             
-            const imageSize = 60;
+            const imageSize = 53;
             const xPos = 365 - (textWidth / 2) - imageSize - 1;
-            const yPos = 55;
+            const yPos = 60;
 
             console.log(`🔄 Creating temp canvas for Robux image...`);
             const tempCanvas = createCanvas(imageSize, imageSize);
@@ -223,7 +229,7 @@ async function createDonationImage(donatorAvatar, raiserAvatar, donatorName, rai
         
         // Draw "donated to" text
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 28px Arial';
+        ctx.font = 'bold 28px Montserrat';
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 8;
         ctx.strokeText('donated to', 350, 140);
