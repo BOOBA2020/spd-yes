@@ -45,7 +45,7 @@ app.get('/health', (req, res) => {
 });
 
 function getDonationEmoji(amount) {
-    if (amount >= 10000) return '<:StarfallWings:1321143371510714410>';
+    if (amount >= 10000) return '<:starfall:1413292844575227944>';
     if (amount >= 1000) return '<:smite:1413292959213944882>';
     if (amount >= 100) return '<:Nuke:1413293038528106566>';
     if (amount >= 10) return '<:blimp:1413292777076293673>';
