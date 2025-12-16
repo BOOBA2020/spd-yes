@@ -179,7 +179,7 @@ async function createDonationImage(donatorAvatar, raiserAvatar, donatorName, rai
         ctx.font = 'bold 34px Montserrat';
         ctx.textAlign = 'center';
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 5;
 
         console.log('🔄 Attempting to load Robux image...');
         
