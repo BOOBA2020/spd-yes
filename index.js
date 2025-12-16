@@ -45,12 +45,12 @@ app.get('/health', (req, res) => {
 });
 
 function getDonationEmoji(amount) {
-    if (amount >= 10000) return '<:startfall:1414154493259681923>';
-    if (amount >= 1000) return '<:smite:1414154476800966776>';
-    if (amount >= 100) return '<:nuike:1414154435457843200>';
-    if (amount >= 10) return '<:blimp:1400850994119577600>';
-    if (amount >= 5) return '<:sign:1434591601598140468>';
-    return '<:sign:1434591601598140468>';
+    if (amount >= 10000) return '<:StarfallWings:1321143371510714410>';
+    if (amount >= 1000) return '<:smite:1413292959213944882>';
+    if (amount >= 100) return '<:nuke:1421788104653803584>';
+    if (amount >= 10) return '<:blimp:1413292777076293673>';
+    if (amount >= 5) return '<:sign:1435629258566406164>';
+    return '<:sign:1435629258566406164>';
 }
 
 function formatCommas(number) {
@@ -252,21 +252,17 @@ app.post('/donation', async (req, res) => {
     
     const { DonatorId, RaiserId, DonatorName, RaiserName, Amount } = req.body;
     
-    // Handle anonymous users
-    const isDonatorAnonymous = DonatorId === 1 || DonatorName === "Anonymous" || !DonatorName.startsWith('@');
-    const isRaiserAnonymous = RaiserId === 1 || RaiserName === "Anonymous" || !RaiserName.startsWith('@');
-    
-    // Use default Roblox avatar (ID 1) for anonymous users
-    const donatorAvatarId = isDonatorAnonymous ? 1 : DonatorId;
-    const raiserAvatarId = isRaiserAnonymous ? 1 : RaiserId;
-    
-    // Set display names to "@Anonymous" for anonymous users
-    const donatorDisplayName = isDonatorAnonymous ? "Anonymous" : DonatorName.replace('@', '');
-    const raiserDisplayName = isRaiserAnonymous ? "Anonymous" : RaiserName.replace('@', '');
+    // Always use the real Roblox ID and name
+    const donatorAvatarId = DonatorId;
+    const raiserAvatarId = RaiserId;
+
+    // Remove the "@" if present, but keep real names
+    const donatorDisplayName = DonatorName.replace('@', '');
+    const raiserDisplayName = RaiserName.replace('@', '');
     
     console.log('👤 Processed names:');
-    console.log('- Donator:', donatorDisplayName, '(anonymous:', isDonatorAnonymous, ')');
-    console.log('- Raiser:', raiserDisplayName, '(anonymous:', isRaiserAnonymous, ')');
+    console.log('- Donator:', donatorDisplayName);
+    console.log('- Raiser:', raiserDisplayName);
     
     try {
         const donatorAvatar = await getRobloxThumbnail(donatorAvatarId);
@@ -284,7 +280,7 @@ app.post('/donation', async (req, res) => {
 
         const channel = await client.channels.fetch('1368454360710905961');
         await channel.send({
-            content: `${getDonationEmoji(Amount)} \`@${donatorDisplayName}\` donated **<:smallrobux:1434592131271626772>${formatCommas(Amount)} Robux** to \`@${raiserDisplayName}\``,
+            content: `${getDonationEmoji(Amount)} \`@${donatorDisplayName}\` donated **<:robux_s:1382603908526116894>${formatCommas(Amount)} Robux** to \`@${raiserDisplayName}\``,
             embeds: [{
                 color: parseInt(getColor(Amount).replace('#', ''), 16),
                 image: { url: "attachment://donation.png" },
@@ -301,6 +297,7 @@ app.post('/donation', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 
 client.on('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
