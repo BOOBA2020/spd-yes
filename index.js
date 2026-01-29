@@ -196,7 +196,7 @@ if (amount >= 10000) {
             const text = `${formatCommas(amount)}`;
             const textWidth = ctx.measureText(text).width;
             const spacing = 15;
-            const centerX = 990;
+            const centerX = 1000;
 
             const totalWidth = iconSize + spacing + textWidth;
             const startX = centerX - (totalWidth / 2);
