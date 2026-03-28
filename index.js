@@ -24,13 +24,7 @@ app.use((req, res, next) => {
     next();
 });
 
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ]
-});
+
 
 app.get('/', (req, res) => {
     res.json({ 
@@ -311,23 +305,22 @@ client.on('ready', () => {
 });
 // commit pls
 // Move ALL your app.listen and keep-alive stuff to the BOT READY event
-client.on('ready', () => {
-    console.log(`✅ Logged in as ${client.user.tag}`);
-    
-    // Start the HTTP server AFTER bot is ready
-    const PORT = 10000;
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`✅ HTTP server running on port ${PORT}`);
-        
-        // Start keep-alive AFTER server is running
-        setTimeout(() => {
-            keepAlive();
-            console.log('🔄 Keep-alive started - pinging every 4.5 minutes');
-        }, 5000);
-    });
+const PORT = process.env.PORT || 10000;
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ HTTP server running on port ${PORT}`);
+    console.log(`✅ Server URL: https://spd-yes-1.onrender.com`);
 });
 
-// Self-ping to keep Render free tier alive
+// THEN CREATE THE DISCORD CLIENT
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
+});
+
+// Self-ping function (uses the server that's already running)
 const keepAlive = () => {
     const renderUrl = 'https://spd-yes-1.onrender.com';
     
@@ -341,18 +334,30 @@ const keepAlive = () => {
     }, 4.5 * 60 * 1000);
 };
 
-// Also add a ping endpoint
-app.get('/ping', (req, res) => {
-    res.json({ 
-        status: 'alive', 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
+// Start keep-alive after a delay (server is already running)
+setTimeout(() => {
+    keepAlive();
+    console.log('🔄 Keep-alive started - pinging every 4.5 minutes');
+}, 5000);
+
+// DISCORD BOT EVENTS
+client.on('ready', () => {
+    console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-// LOGIN THE BOT (this is the most important part that seems missing)
-client.login(process.env.TOKEN).catch(err => {
-    console.error('❌ Failed to login bot:', err.message);
+client.on('error', (error) => {
+    console.error('❌ Discord client error:', error);
 });
+
+// LOGIN THE BOT
+const token = process.env.TOKEN;
+if (!token) {
+    console.error('❌ No Discord token found in environment variables!');
+    process.exit(1);
+}
+
+client.login(token).catch(err => {
+    console.error('❌ Failed to login bot:', err.message);
+});;
 
 // Remove the old app.listen and keepAlive from the bottom
