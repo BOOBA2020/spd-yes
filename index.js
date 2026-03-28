@@ -4,15 +4,16 @@ const { createCanvas, loadImage, registerFont } = require('canvas');
 const path = require('path');
 const cors = require('cors');
 const express = require('express');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 registerFont('./Gotham-Bold.ttf', { 
-  family: 'Montserrat', 
-  weight: 'bold',
-  style: 'normal'
-})
+    family: 'Montserrat', 
+    weight: 'bold',
+    style: 'normal'
+});
 
 app.use((req, res, next) => {
     console.log('🌐 INCOMING REQUEST:');
@@ -24,7 +25,13 @@ app.use((req, res, next) => {
     next();
 });
 
-
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
+});
 
 app.get('/', (req, res) => {
     res.json({ 
@@ -36,6 +43,14 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
     res.json({ status: 'healthy' });
+});
+
+app.get('/ping', (req, res) => {
+    res.json({ 
+        status: 'alive', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
 });
 
 function getDonationEmoji(amount) {
@@ -76,7 +91,6 @@ async function getRobloxThumbnail(userId) {
         console.log(`❌ Error fetching avatar for ${userId}:`, error.message);
     }
     
-    // Fallback URL
     const fallbackUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`;
     console.log(`🔄 Using fallback URL: ${fallbackUrl}`);
     return fallbackUrl;
@@ -89,54 +103,32 @@ async function createDonationImage(donatorAvatar, raiserAvatar, donatorName, rai
         const donationColor = getColor(amount);
         ctx.clearRect(0, 0, 2048, 512);
 
-
-        const canvasWidth = 2048;
-        const canvasHeight = 514;
-        const scaleX = canvasWidth / 700;   // 2048 ÷ 700 ≈ 2.926
-        const scaleY = canvasHeight / 200;  // 514 ÷ 200 ≈ 2.57
-        const scale = Math.min(scaleX, scaleY); // Use smallest for consistent scaling
+        if (amount >= 1000 && amount < 10000) {
+            const glow = ctx.createLinearGradient(0, 350, 0, 514);
+            glow.addColorStop(0, donationColor + '00');
+            glow.addColorStop(1, donationColor + '25');
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, 350, 2048, 164); 
+        }
         
-        // Helper function to scale positions
-        const scalePos = (x, y) => ({ x: x * scaleX, y: y * scaleY });
-        // --- 1. IMPROVED BACKGROUND GRADIENTS ---
-        // 
-      if (amount >= 1000 && amount < 10000) {
-    // The gradient runs from 350 down to the bottom (514)
-    const glow = ctx.createLinearGradient(0, 350, 0, 514);
-
-    glow.addColorStop(0, donationColor + '00'); // Transparent at top
-    glow.addColorStop(1, donationColor + '25'); // Pink/Color at bottom
-
-    ctx.fillStyle = glow;
-    
-    // Changing 150 to 164 ensures it touches the very bottom edge
-    ctx.fillRect(0, 350, 2048, 164); 
-}
-        // 10M+ Version (The Red One): Solid top/bottom, Faded center
-        // 
-if (amount >= 10000) {
-    const glow = ctx.createLinearGradient(0, 40, 0, 514);
-    
-    glow.addColorStop(0, donationColor + '00'); 
-    glow.addColorStop(0.3, donationColor + '20'); 
-    glow.addColorStop(0.7, donationColor + '60'); 
-    glow.addColorStop(1, donationColor + '65'); 
-    
-    ctx.fillStyle = glow;
-    
-    // 40 (start) + 474 (height) = 514 (perfect bottom)
-    ctx.fillRect(0, 40, 2048, 474); 
-}
+        if (amount >= 10000) {
+            const glow = ctx.createLinearGradient(0, 40, 0, 514);
+            glow.addColorStop(0, donationColor + '00'); 
+            glow.addColorStop(0.3, donationColor + '20'); 
+            glow.addColorStop(0.7, donationColor + '60'); 
+            glow.addColorStop(1, donationColor + '65'); 
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, 40, 2048, 474); 
+        }
+        
         const donatorImg = await loadImage(donatorAvatar);
         const raiserImg = await loadImage(raiserAvatar);
 
-        // --- 2. AVATAR CONFIGURATION ---
         const avatarRadius = 135;
         const avatarY = 195; 
         const donatorX = 395; 
         const raiserX = 1658; 
 
-        // Donator Avatar
         ctx.save();
         ctx.beginPath();
         ctx.arc(donatorX, avatarY, avatarRadius, 0, Math.PI * 2);
@@ -144,7 +136,6 @@ if (amount >= 10000) {
         ctx.drawImage(donatorImg, donatorX - avatarRadius, avatarY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
         ctx.restore();
 
-        // Raiser Avatar
         ctx.save();
         ctx.beginPath();
         ctx.arc(raiserX, avatarY, avatarRadius, 0, Math.PI * 2);
@@ -152,7 +143,6 @@ if (amount >= 10000) {
         ctx.drawImage(raiserImg, raiserX - avatarRadius, avatarY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
         ctx.restore();
 
-        // Avatar Borders
         ctx.strokeStyle = donationColor;
         ctx.lineWidth = 12;
         ctx.beginPath();
@@ -162,7 +152,6 @@ if (amount >= 10000) {
         ctx.arc(raiserX, avatarY, avatarRadius, 0, Math.PI * 2);
         ctx.stroke();
 
-        // --- 3. NAME TEXT ---
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 50px Montserrat';
         ctx.textAlign = 'center';
@@ -173,8 +162,6 @@ if (amount >= 10000) {
         ctx.strokeText(`@${raiserName}`, raiserX, 420);
         ctx.fillText(`@${raiserName}`, raiserX, 420);
 
-        // --- 4. ROBX ICON & AMOUNT ---
-        // Adjust these to change price appearance
         const amountFontSize = 130;   
         const amountY = 200;          
         const iconSize = 130;         
@@ -186,7 +173,7 @@ if (amount >= 10000) {
         ctx.lineWidth = amountStrokeWidth;
         
         try {
-   const robuxImage = await loadImage(path.join(__dirname, 'robuxIcon.png'));
+            const robuxImage = await loadImage(path.join(__dirname, 'robuxIcon.png'));
             const text = `${formatCommas(amount)}`;
             const textWidth = ctx.measureText(text).width;
             const spacing = 15;
@@ -199,7 +186,6 @@ if (amount >= 10000) {
             const textX = startX + iconSize + spacing + (textWidth / 2);
             const iconY = amountY - (iconSize / 1.2); 
 
-            // Create Tinted Icon
             const tempCanvas = createCanvas(iconSize, iconSize);
             const tempCtx = tempCanvas.getContext('2d');
             tempCtx.drawImage(robuxImage, 0, 0, iconSize, iconSize);
@@ -207,9 +193,8 @@ if (amount >= 10000) {
             tempCtx.fillStyle = donationColor;
             tempCtx.fillRect(0, 0, iconSize, iconSize);
 
-            // Draw Hexagonal Stroke
             ctx.save();
-            const s = 6; // Thin stroke to match text
+            const s = 6;
             const maskCanvas = createCanvas(iconSize, iconSize);
             const maskCtx = maskCanvas.getContext('2d');
             maskCtx.drawImage(robuxImage, 0, 0, iconSize, iconSize);
@@ -233,7 +218,6 @@ if (amount >= 10000) {
             console.log("Error rendering icon:", e);
         }
 
-        // --- 5. "DONATED TO" TEXT ---
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 95px Montserrat';
         ctx.lineWidth = 14;
@@ -253,11 +237,8 @@ app.post('/donation', async (req, res) => {
     
     const { DonatorId, RaiserId, DonatorName, RaiserName, Amount } = req.body;
     
-    // Always use the real Roblox ID and name
     const donatorAvatarId = DonatorId;
     const raiserAvatarId = RaiserId;
-
-    // Remove the "@" if present, but keep real names
     const donatorDisplayName = DonatorName.replace('@', '');
     const raiserDisplayName = RaiserName.replace('@', '');
     
@@ -299,28 +280,20 @@ app.post('/donation', async (req, res) => {
     }
 });
 
-
 client.on('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
 });
-// commit pls
-// Move ALL your app.listen and keep-alive stuff to the BOT READY event
+
+client.on('error', (error) => {
+    console.error('❌ Discord client error:', error);
+});
+
 const PORT = process.env.PORT || 10000;
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ HTTP server running on port ${PORT}`);
     console.log(`✅ Server URL: https://spd-yes-1.onrender.com`);
 });
 
-// THEN CREATE THE DISCORD CLIENT
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ]
-});
-
-// Self-ping function (uses the server that's already running)
 const keepAlive = () => {
     const renderUrl = 'https://spd-yes-1.onrender.com';
     
@@ -334,22 +307,11 @@ const keepAlive = () => {
     }, 4.5 * 60 * 1000);
 };
 
-// Start keep-alive after a delay (server is already running)
 setTimeout(() => {
     keepAlive();
     console.log('🔄 Keep-alive started - pinging every 4.5 minutes');
 }, 5000);
 
-// DISCORD BOT EVENTS
-client.on('ready', () => {
-    console.log(`✅ Logged in as ${client.user.tag}`);
-});
-
-client.on('error', (error) => {
-    console.error('❌ Discord client error:', error);
-});
-
-// LOGIN THE BOT
 const token = process.env.TOKEN;
 if (!token) {
     console.error('❌ No Discord token found in environment variables!');
@@ -358,6 +320,4 @@ if (!token) {
 
 client.login(token).catch(err => {
     console.error('❌ Failed to login bot:', err.message);
-});;
-
-// Remove the old app.listen and keepAlive from the bottom
+});
