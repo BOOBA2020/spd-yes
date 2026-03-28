@@ -317,7 +317,7 @@ app.listen(PORT, '0.0.0.0', () => {
 
 const keepAlive = () => {
     // Your Render app URL - REPLACE THIS WITH YOUR ACTUAL URL
-    const renderUrl = 'https://spd-yes.onrender.com';
+    const renderUrl = 'https://spd-yes-1.onrender.com';
     
     setInterval(async () => {
         try {
