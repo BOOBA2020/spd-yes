@@ -315,4 +315,24 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`HTTP server running on port ${PORT}`);
 });
 
+const keepAlive = () => {
+    // Your Render app URL - REPLACE THIS WITH YOUR ACTUAL URL
+    const renderUrl = 'https://spd-yes.onrender.com';
+    
+    setInterval(async () => {
+        try {
+            const response = await axios.get(`${renderUrl}/health`);
+            console.log(`🔄 Self-ping successful at ${new Date().toISOString()}: Status ${response.status}`);
+        } catch (error) {
+            console.log(`❌ Self-ping failed at ${new Date().toISOString()}:`, error.message);
+        }
+    }, 4.5 * 60 * 1000); // 4.5 minutes (Render sleeps after 5 minutes of inactivity)
+};
+
+// Start the keep-alive after server is running
+setTimeout(() => {
+    keepAlive();
+    console.log('🔄 Keep-alive started - pinging every 4.5 minutes');
+}, 5000);
+
 client.login(process.env.TOKEN);
