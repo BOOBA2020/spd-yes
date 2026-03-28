@@ -310,29 +310,49 @@ client.on('ready', () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
 });
 // commit pls
-const PORT = 10000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`HTTP server running on port ${PORT}`);
+// Move ALL your app.listen and keep-alive stuff to the BOT READY event
+client.on('ready', () => {
+    console.log(`✅ Logged in as ${client.user.tag}`);
+    
+    // Start the HTTP server AFTER bot is ready
+    const PORT = 10000;
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`✅ HTTP server running on port ${PORT}`);
+        
+        // Start keep-alive AFTER server is running
+        setTimeout(() => {
+            keepAlive();
+            console.log('🔄 Keep-alive started - pinging every 4.5 minutes');
+        }, 5000);
+    });
 });
 
+// Self-ping to keep Render free tier alive
 const keepAlive = () => {
-    // Your Render app URL - REPLACE THIS WITH YOUR ACTUAL URL
     const renderUrl = 'https://spd-yes-1.onrender.com';
     
     setInterval(async () => {
         try {
-            const response = await axios.get(`${renderUrl}/health`);
-            console.log(`🔄 Self-ping successful at ${new Date().toISOString()}: Status ${response.status}`);
+            const response = await axios.get(`${renderUrl}/health`, { timeout: 10000 });
+            console.log(`🔄 Self-ping successful at ${new Date().toISOString()}`);
         } catch (error) {
-            console.log(`❌ Self-ping failed at ${new Date().toISOString()}:`, error.message);
+            console.log(`❌ Self-ping failed:`, error.message);
         }
-    }, 4.5 * 60 * 1000); // 4.5 minutes (Render sleeps after 5 minutes of inactivity)
+    }, 4.5 * 60 * 1000);
 };
 
-// Start the keep-alive after server is running
-setTimeout(() => {
-    keepAlive();
-    console.log('🔄 Keep-alive started - pinging every 4.5 minutes');
-}, 5000);
+// Also add a ping endpoint
+app.get('/ping', (req, res) => {
+    res.json({ 
+        status: 'alive', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
 
-client.login(process.env.TOKEN);
+// LOGIN THE BOT (this is the most important part that seems missing)
+client.login(process.env.TOKEN).catch(err => {
+    console.error('❌ Failed to login bot:', err.message);
+});
+
+// Remove the old app.listen and keepAlive from the bottom
